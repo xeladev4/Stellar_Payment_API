@@ -30,18 +30,23 @@ export default function PaymentPage() {
 
   // Fetch payment details
   useEffect(() => {
+    const controller = new AbortController();
+    
     const fetchPayment = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-        const response = await fetch(`${apiUrl}/api/payment-status/${paymentId}`);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+        const response = await fetch(`${apiUrl}/api/payment-status/${paymentId}`, {
+          signal: controller.signal
+        });
         
         if (!response.ok) {
           throw new Error("Payment not found");
         }
         
         const data = await response.json();
-        setPayment(data);
-      } catch (err) {
+        setPayment(data.payment); // Fixing data structure - backend returns { payment: data }
+      } catch (err: any) {
+        if (err.name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Failed to fetch payment details");
       } finally {
         setLoading(false);
@@ -49,6 +54,8 @@ export default function PaymentPage() {
     };
 
     fetchPayment();
+
+    return () => controller.abort();
   }, [paymentId]);
 
   // Check if Freighter is available
@@ -88,8 +95,8 @@ export default function PaymentPage() {
       // Verify the payment with the backend
       setTimeout(async () => {
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-          await fetch(`${apiUrl}/api/payment-status/${paymentId}`);
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+          await fetch(`${apiUrl}/api/verify-payment/${paymentId}`, { method: "POST" });
         } catch {
           // Silent error - the payment is still valid on-chain
         }
