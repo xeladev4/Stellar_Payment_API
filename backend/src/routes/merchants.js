@@ -26,8 +26,43 @@ function validateRegisterMerchant(body) {
 }
 
 /**
- * POST /register
- * Creates a new merchant profile and returns an API key.
+ * @swagger
+ * /api/register-merchant:
+ *   post:
+ *     summary: Register a new merchant
+ *     tags: [Merchants]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               business_name:
+ *                 type: string
+ *               notification_email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       201:
+ *         description: Merchant registered
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 merchant:
+ *                   type: object
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Merchant already exists
  */
 router.post("/register-merchant", async (req, res, next) => {
   try {

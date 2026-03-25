@@ -43,6 +43,60 @@ function validateCreatePayment(body) {
   return null;
 }
 
+/**
+ * @swagger
+ * /api/create-payment:
+ *   post:
+ *     summary: Create a new payment request
+ *     tags: [Payments]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [amount, asset, recipient]
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 description: Payment amount (must be positive)
+ *               asset:
+ *                 type: string
+ *                 description: Asset code (e.g. XLM, USDC)
+ *               asset_issuer:
+ *                 type: string
+ *                 description: Asset issuer (required for non-native assets)
+ *               recipient:
+ *                 type: string
+ *                 description: Stellar address of the recipient
+ *               merchant_id:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               memo:
+ *                 type: string
+ *               memo_type:
+ *                 type: string
+ *                 enum: [text, id, hash, return]
+ *               webhook_url:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Payment created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 payment_id:
+ *                   type: string
+ *                 payment_link:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *       400:
+ *         description: Validation error
+ */
 router.post("/create-payment", async (req, res, next) => {
   try {
     const error = validateCreatePayment(req.body || {});
@@ -93,6 +147,32 @@ router.post("/create-payment", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/payment-status/{id}:
+ *   get:
+ *     summary: Get the status of a payment
+ *     tags: [Payments]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Payment ID
+ *     responses:
+ *       200:
+ *         description: Payment details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 payment:
+ *                   type: object
+ *       404:
+ *         description: Payment not found
+ */
 router.get("/payment-status/:id", async (req, res, next) => {
   try {
     const { data, error } = await supabase
@@ -118,6 +198,37 @@ router.get("/payment-status/:id", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/verify-payment/{id}:
+ *   post:
+ *     summary: Verify a payment on the Stellar network
+ *     tags: [Payments]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Payment ID
+ *     responses:
+ *       200:
+ *         description: Verification result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [pending, confirmed]
+ *                 tx_id:
+ *                   type: string
+ *                 webhook:
+ *                   type: object
+ *       404:
+ *         description: Payment not found
+ */
 router.post("/verify-payment/:id", async (req, res, next) => {
   try {
     const { data, error } = await supabase
