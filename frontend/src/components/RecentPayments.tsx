@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import PaymentDetailModal from "@/components/PaymentDetailModal";
 import {
   useHydrateMerchantStore,
@@ -36,9 +36,6 @@ export default function RecentPayments() {
   const [, setTotalCount] = useState(0);
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [bulkMode, setBulkMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const selectAllRef = useRef<HTMLInputElement | null>(null);
   const apiKey = useMerchantApiKey();
   const hydrated = useMerchantHydrated();
 

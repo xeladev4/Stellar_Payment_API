@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useHydrateMerchantStore } from "@/lib/merchant-store";
@@ -13,7 +13,7 @@ type AppNavLink = {
 type DashboardNavLink = {
   href: string;
   label: string;
-  icon: (active: boolean) => JSX.Element;
+  icon: (active: boolean) => React.JSX.Element;
   enabled: boolean;
 };
 
