@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useHydrateMerchantStore } from "@/lib/merchant-store";
 import MerchantProfileCard from "@/components/MerchantProfileCard";
+import ApiHealthBadge from "@/components/ApiHealthBadge";
 
 type AppNavLink = {
   href: string;
@@ -200,7 +201,8 @@ export default function Navbar() {
                 }`}
               ></span>
             </button>
-            <div className="hidden md:block">
+            <div className="hidden md:flex items-center gap-3">
+              <ApiHealthBadge />
               <MerchantProfileCard />
             </div>
           </div>
@@ -212,8 +214,9 @@ export default function Navbar() {
           hidden={!isMenuOpen}
           className="border-t border-white/10 py-4 md:hidden"
         >
-          <div className="mb-4 flex items-center justify-center">
+          <div className="mb-4 flex flex-col items-center justify-center gap-4">
             <MerchantProfileCard />
+            <ApiHealthBadge />
           </div>
           <div className="flex flex-col gap-4">
             {appNavLinks.map((link) => (
