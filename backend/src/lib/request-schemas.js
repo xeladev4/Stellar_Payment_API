@@ -65,6 +65,11 @@ const paymentBaseSchema = z.object({
   });
 
 function applyPaymentValidationRules(body, ctx) {
+    const isValidUnsigned64BitInteger = (value) => {
+      const parsed = (() => { try { return BigInt(value); } catch { return -1n; } })();
+      return parsed >= 0n && parsed <= 18446744073709551615n && /^\d+$/.test(value);
+    };
+
     if (body.asset === "XLM" && body.amount < MINIMUM_XLM_PAYMENT_AMOUNT) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -105,13 +110,40 @@ function applyPaymentValidationRules(body, ctx) {
       });
     }
 
-    if (body.memo_type === "hash") {
-      if (!body.memo || !/^[0-9a-fA-F]{64}$/.test(body.memo)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["memo"],
-          message: "Invalid hash memo: must be exactly 64 hexadecimal characters",
-        });
+    // Validate memo value format based on memo_type
+    if (body.memo && body.memo_type) {
+      if (body.memo_type === "id") {
+        if (!isValidUnsigned64BitInteger(body.memo)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["memo"],
+            message: "memo must be a valid unsigned 64-bit integer when memo_type is id",
+          });
+        }
+      }
+
+      if (body.memo_type === "hash") {
+        if (!/^[0-9a-fA-F]{64}$/.test(body.memo)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["memo"],
+            message: `memo must be a 32-byte hex string (64 characters) when memo_type is ${body.memo_type}`,
+          });
+        }
+      }
+
+      if (body.memo_type === "return") {
+        const isHashMemo = /^[0-9a-fA-F]{64}$/.test(body.memo);
+        const isIdMemo = isValidUnsigned64BitInteger(body.memo);
+
+        if (!isHashMemo && !isIdMemo) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["memo"],
+            message:
+              "memo must be a valid unsigned 64-bit integer or a 32-byte hex string (64 characters) when memo_type is return",
+          });
+        }
       }
     }
 }
@@ -275,6 +307,11 @@ const paymentBaseV2 = z.object({
 export const v2PaymentSessionSchema = paymentBaseV2
   .extend({ branding_overrides: sessionBrandingSchema })
   .superRefine((body, ctx) => {
+    const isValidUnsigned64BitInteger = (value) => {
+      const parsed = (() => { try { return BigInt(value); } catch { return -1n; } })();
+      return parsed >= 0n && parsed <= 18446744073709551615n && /^\d+$/.test(value);
+    };
+
     if (body.asset === "XLM" && body.amount < MINIMUM_XLM_PAYMENT_AMOUNT) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -309,6 +346,43 @@ export const v2PaymentSessionSchema = paymentBaseV2
         path: ["memo_type"],
         message: `Invalid memo_type. Must be one of: ${VALID_MEMO_TYPES.join(", ")}`,
       });
+    }
+
+    // Validate memo value format based on memo_type
+    if (body.memo && body.memo_type) {
+      if (body.memo_type === "id") {
+        if (!isValidUnsigned64BitInteger(body.memo)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["memo"],
+            message: "memo must be a valid unsigned 64-bit integer when memo_type is id",
+          });
+        }
+      }
+
+      if (body.memo_type === "hash") {
+        if (!/^[0-9a-fA-F]{64}$/.test(body.memo)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["memo"],
+            message: `memo must be a 32-byte hex string (64 characters) when memo_type is ${body.memo_type}`,
+          });
+        }
+      }
+
+      if (body.memo_type === "return") {
+        const isHashMemo = /^[0-9a-fA-F]{64}$/.test(body.memo);
+        const isIdMemo = isValidUnsigned64BitInteger(body.memo);
+
+        if (!isHashMemo && !isIdMemo) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["memo"],
+            message:
+              "memo must be a valid unsigned 64-bit integer or a 32-byte hex string (64 characters) when memo_type is return",
+          });
+        }
+      }
     }
   });
 
