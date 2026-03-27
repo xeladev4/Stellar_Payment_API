@@ -3,10 +3,13 @@ import { randomBytes } from "crypto";
 import { supabase } from "../lib/supabase.js";
 import { requireApiKeyAuth } from "../lib/auth.js";
 import { getMerchantApiUsage } from "../lib/api-usage.js";
+import { z } from "zod";
+import { validateRequest } from "../lib/validation.js";
 import {
   registerMerchantZodSchema,
   sessionBrandingSchema,
   webhookSettingsSchema,
+  testWebhookSchema
 } from "../lib/request-schemas.js";
 import { resolveBrandingConfig } from "../lib/branding.js";
 import { resolveMerchantSettings } from "../lib/merchant-settings.js";
@@ -82,9 +85,9 @@ function resolveWebhookSecretRotationGraceHours(requestValue) {
  *       409:
  *         description: Merchant already exists
  */
-router.post("/register-merchant", async (req, res, next) => {
+router.post("/register-merchant", validateRequest({ body: registerMerchantZodSchema }), async (req, res, next) => {
   try {
-    const body = registerMerchantZodSchema.parse(req.body || {});
+    const body = req.body;
 
     const { email } = body;
     const business_name = body.business_name || email.split("@")[0];
@@ -223,9 +226,9 @@ router.post("/rotate-key", async (req, res, next) => {
  *                 grace_period_hours:
  *                   type: integer
  */
-router.post("/merchants/rotate-webhook-secret", async (req, res, next) => {
+router.post("/merchants/rotate-webhook-secret", validateRequest({ body: rotateWebhookSecretSchema }), async (req, res, next) => {
   try {
-    const body = rotateWebhookSecretSchema.parse(req.body || {});
+    const body = req.body;
     const graceHours = resolveWebhookSecretRotationGraceHours(
       body.grace_period_hours,
     );
@@ -281,9 +284,9 @@ router.get("/merchant-branding", async (req, res, next) => {
   }
 });
 
-router.put("/merchant-branding", async (req, res, next) => {
+router.put("/merchant-branding", validateRequest({ body: sessionBrandingSchema }), async (req, res, next) => {
   try {
-    const brandingConfig = sessionBrandingSchema.parse(req.body || {});
+    const brandingConfig = req.body;
     const resolved = resolveBrandingConfig({ merchantBranding: brandingConfig });
 
     const { data, error } = await supabase
@@ -344,18 +347,9 @@ router.get("/merchant-profile", async (req, res, next) => {
  *     security:
  *       - ApiKeyAuth: []
  */
-router.post("/test-webhook", async (req, res, next) => {
+router.post("/test-webhook", validateRequest({ body: testWebhookSchema }), async (req, res, next) => {
   try {
-    const { webhook_url } = req.body || {};
-
-    if (!webhook_url) {
-      return res.status(400).json({ error: "webhook_url is required" });
-    }
-
-    const urlValidation = z.string().url().safeParse(webhook_url);
-    if (!urlValidation.success) {
-      return res.status(400).json({ error: "webhook_url must be a valid URL" });
-    }
+    const { webhook_url } = req.body;
 
     const payload = getPayloadForVersion(
       req.merchant.webhook_version || "v1",
@@ -457,9 +451,9 @@ router.get("/webhook-settings", async (req, res, next) => {
  *       400:
  *         description: Validation error
  */
-router.put("/webhook-settings", async (req, res, next) => {
+router.put("/webhook-settings", validateRequest({ body: webhookSettingsSchema }), async (req, res, next) => {
   try {
-    const body = webhookSettingsSchema.parse(req.body || {});
+    const body = req.body;
 
     const { data, error } = await supabase
       .from("merchants")

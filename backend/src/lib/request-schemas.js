@@ -202,5 +202,82 @@ export const webhookSettingsSchema = z.object({
 });
 
 export function formatZodError(error) {
-  return error.issues?.[0]?.message || "Validation error";
+  if (error && Array.isArray(error.issues)) {
+    return error.issues.map(issue => ({
+      field: issue.path.join('.'),
+      message: issue.message
+    }));
+  }
+  return "Validation error";
 }
+
+/**
+ * Helper to parse and validate payment body for session creation.
+ */
+export function parseVersionedPaymentBody(req) {
+  return paymentSessionZodSchema.parse(req.body);
+}
+
+// ─── Shared Schemas ────────────────────────────────────────────────────────
+
+export const paginationQuerySchema = z.object({
+  page: z.preprocess((val) => (val ? Number(val) : 1), z.number().int().min(1).default(1)),
+  limit: z.preprocess((val) => (val ? Number(val) : 10), z.number().int().min(1).max(100).default(10)),
+});
+
+// ─── Authentication Schemas ────────────────────────────────────────────────
+
+export const authChallengeSchema = z.object({
+  account: z.string({
+    required_error: "Account address required",
+    invalid_type_error: "Account must be a string",
+  }).refine((val) => val.startsWith("G") && val.length === 56, "Invalid Stellar address")
+});
+
+export const authVerifySchema = z.object({
+  transaction: z.string({
+    required_error: "Transaction XDR required",
+    invalid_type_error: "Transaction must be a string",
+  })
+});
+
+// ─── Webhook Schemas ───────────────────────────────────────────────────────
+
+export const testWebhookSchema = z.object({
+  webhook_url: z.string({
+    required_error: "webhook_url is required",
+    invalid_type_error: "webhook_url must be a string",
+  }).url("webhook_url must be a valid URL")
+});
+
+// ─── Payment Schemas ───────────────────────────────────────────────────────
+
+export const refundConfirmSchema = z.object({
+  tx_hash: z.string({
+    required_error: "Transaction hash required",
+    invalid_type_error: "Transaction hash must be a string",
+  })
+});
+
+export const pathPaymentQuoteQuerySchema = z.object({
+  source_asset: z.string({
+    required_error: "source_asset query parameter is required",
+  }),
+  source_asset_issuer: z.string().optional(),
+  source_account: z.string({
+    required_error: "source_account query parameter is required",
+  })
+});
+
+// ─── Metrics Schemas ───────────────────────────────────────────────────────
+
+export const metricsVolumeQuerySchema = z.object({
+  range: z
+    .string()
+    .transform((val) => val.toUpperCase())
+    .refine((val) => ["7D", "30D", "1Y"].includes(val), {
+      message: "Invalid range. Use 7D, 30D, or 1Y.",
+    })
+    .optional()
+    .default("7D"),
+});
