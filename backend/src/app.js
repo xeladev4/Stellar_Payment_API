@@ -7,10 +7,11 @@ import { httpLogger, logger } from "./lib/logger.js";
 import { createSwaggerSpec } from "./swagger.js";
 
 import createPaymentsRouter from "./routes/payments.js";
-import merchantsRouter from "./routes/merchants.js";
+import createMerchantsRouter from "./routes/merchants.js";
 import metricsRouter from "./routes/metrics.js";
 import webhooksRouter from "./routes/webhooks.js";
 import prometheusRouter from "./routes/prometheus.js";
+import paymentDetailsRouter from "./routes/paymentDetails.js"; // NEW
 
 import { requireApiKeyAuth } from "./lib/auth.js";
 import { isHorizonReachable } from "./lib/stellar.js";
@@ -18,9 +19,11 @@ import { supabase } from "./lib/supabase.js";
 import { pool } from "./lib/db.js";
 import { formatZodError } from "./lib/request-schemas.js";
 import { idempotencyMiddleware } from "./lib/idempotency.js";
+import { setupSentryErrorHandler } from "./lib/sentry.js";
 import {
   createRedisRateLimitStore,
   createVerifyPaymentRateLimit,
+  createMerchantRegistrationRateLimit,
 } from "./lib/rate-limit.js";
 
 export async function createApp({ redisClient }) {
@@ -69,7 +72,7 @@ export async function createApp({ redisClient }) {
         callback(new Error("Not allowed by CORS"));
       },
       credentials: true,
-    }),
+    })
   );
 
   app.use(express.json({ limit: "1mb" }));
@@ -79,6 +82,42 @@ export async function createApp({ redisClient }) {
   app.locals.logger = logger;
 
   // Health check
+  /**
+   * @swagger
+   * /health:
+   *   get:
+   *     summary: Health check endpoint
+   *     description: Check the health status of the API and its dependencies (database, Stellar Horizon)
+   *     tags: [Health]
+   *     security: []
+   *     responses:
+   *       200:
+   *         description: API is healthy
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 ok:
+   *                   type: boolean
+   *                   description: Overall health status
+   *                 horizon_reachable:
+   *                   type: boolean
+   *                   description: Whether Stellar Horizon is reachable
+   *       503:
+   *         description: Service unavailable - database or Horizon is unreachable
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 ok:
+   *                   type: boolean
+   *                 error:
+   *                   type: string
+   *                 horizon_reachable:
+   *                   type: boolean
+   */
   app.get("/health", async (req, res) => {
     try {
       const [dbResult, horizonReachable] = await Promise.all([
@@ -116,22 +155,30 @@ export async function createApp({ redisClient }) {
     store: createRedisRateLimitStore({ client: redisClient }),
   });
 
+  const merchantRegistrationRateLimit = createMerchantRegistrationRateLimit({
+    store: createRedisRateLimitStore({ client: redisClient }),
+  });
+
   app.use("/api/create-payment", requireApiKeyAuth());
   app.use("/api/create-payment", idempotencyMiddleware);
   app.use("/api/sessions", requireApiKeyAuth());
   app.use("/api/sessions", idempotencyMiddleware);
-  app.use("/api/payments", requireApiKeyAuth());
+  app.use("/api/payments", requireApiKeyAuth()); // covers /api/payments/:id too
   app.use("/api/rotate-key", requireApiKeyAuth());
   app.use("/api/merchant-branding", requireApiKeyAuth());
   app.use("/api/webhooks", requireApiKeyAuth());
 
   app.use("/api", createPaymentsRouter({ verifyPaymentRateLimit }));
-  app.use("/api", merchantsRouter);
+  app.use("/api", merchantsRouter({ merchantRegistrationRateLimit }));
   app.use("/api", metricsRouter);
   app.use("/api", webhooksRouter);
+  app.use("/api/payments", paymentDetailsRouter); // NEW — GET /api/payments/:id
 
   // Prometheus Metrics endpoint
   app.use("/", prometheusRouter);
+
+  // Sentry error handler — must come after all routes, before custom error handler
+  setupSentryErrorHandler(app);
 
   app.use((err, req, res, next) => {
     if (err instanceof ZodError) {
