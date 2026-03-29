@@ -1,6 +1,7 @@
 import express from "express";
 import { merchantService } from "../services/merchantService.js";
 import { requireApiKeyAuth } from "../lib/auth.js";
+import { supabase } from "../lib/supabase.js";
 
 const router = express.Router();
 
@@ -143,6 +144,43 @@ router.post("/webhooks/test", requireApiKeyAuth(), async (req, res, next) => {
       status: result.status,
       body: result.body,
       signed: result.signed,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @swagger
+ * /api/notifications:
+ *   get:
+ *     summary: Get dashboard notifications
+ *     tags: [Notifications]
+ *     security:
+ *       - ApiKeyAuth: []
+ */
+router.get("/notifications", requireApiKeyAuth(), async (req, res, next) => {
+  try {
+    const merchantId = req.merchant.id;
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    const { count, error } = await supabase
+      .from("webhook_delivery_logs")
+      .select(`id, payments!inner(merchant_id)`, { count: 'exact', head: true })
+      .eq("payments.merchant_id", merchantId)
+      .gte("timestamp", twentyFourHoursAgo.toISOString())
+      .or("status_code.lt.200,status_code.gte.300");
+
+    if (error) throw error;
+
+    res.json({
+      notifications: (count || 0) > 5 ? [{
+         id: "webhook-failures",
+         message: `You have ${count} webhook delivery failures in the last 24 hours.`,
+         type: "warning"
+      }] : [],
+      unreadCount: (count || 0) > 5 ? 1 : 0
     });
   } catch (err) {
     next(err);
