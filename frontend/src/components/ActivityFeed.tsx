@@ -38,7 +38,7 @@ export default function ActivityFeed() {
 
   useHydrateMerchantStore();
 
-  const handleConfirmed = useCallback((event: any) => {
+  const handleConfirmed = useCallback((event: { id: string; amount: number; asset: string; confirmed_at: string }) => {
     setPayments((prev) => {
       // If payment exists, update it to confirmed and move to top
       const exists = prev.find((p) => p.id === event.id);
