@@ -481,6 +481,8 @@ function createPaymentsRouter({
           .is("deleted_at", null)
           .maybeSingle();
 
+        console.log("DEBUG: Supabase query finished. data exists:", !!data, "error:", !!error);
+
         if (error) {
           error.status = 500;
           throw error;
@@ -510,12 +512,14 @@ function createPaymentsRouter({
 
         if (!match) {
           // Check if a payment arrived but with the wrong amount
+          console.log("DEBUG: No match found, calling findAnyRecentPayment");
           const anyPayment = await findAnyRecentPayment({
             recipient: data.recipient,
             assetCode: data.asset,
             assetIssuer: data.asset_issuer,
             createdAt: data.created_at,
           });
+          console.log("DEBUG: findAnyRecentPayment finished. anyPayment exists:", !!anyPayment);
 
           if (anyPayment) {
             const received = Number(anyPayment.received_amount);
@@ -638,6 +642,7 @@ function createPaymentsRouter({
         paymentConfirmationLatency.observe({ asset: data.asset }, latencySeconds);
 
         // Emit real-time event to the merchant's private room (issue #229)
+        console.log("DEBUG: confirmed logic started. ID:", data.id);
         const io = req.app.locals.io;
         if (io && data.merchant_id) {
           io.to(`merchant:${data.merchant_id}`).emit("payment:confirmed", {
@@ -652,6 +657,7 @@ function createPaymentsRouter({
         }
 
         // Notify customer via SSE (issue #89)
+        console.log("DEBUG: Calling streamManager.notify");
         streamManager.notify(data.id, "payment.confirmed", {
           status: "confirmed",
           tx_id: match.transaction_hash,
