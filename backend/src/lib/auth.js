@@ -151,10 +151,16 @@ export function requireSessionAuth() {
       }
 
       const client = (await import("./supabase.js")).supabase;
+      const merchantId = payload.id || payload.merchant_id;
+      
+      if (!merchantId) {
+        return res.status(401).json({ error: "Invalid token payload: missing merchant identification" });
+      }
+
       const { data: merchant, error } = await client
         .from("merchants")
         .select("id, email, business_name, notification_email, api_key")
-        .eq("id", payload.merchant_id)
+        .eq("id", merchantId)
         .maybeSingle();
 
       if (error || !merchant) {

@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { login } from "@/lib/auth";
+import { useMerchantStore } from "@/lib/merchant-store";
 
 export default function LoginForm() {
   const router = useRouter();
+  const hydrate = useMerchantStore((state) => state.hydrate);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -20,6 +22,7 @@ export default function LoginForm() {
 
     try {
       await login(email, password);
+      hydrate(); // sync localStorage token into Zustand store
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");

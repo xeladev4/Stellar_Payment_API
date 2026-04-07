@@ -238,7 +238,7 @@ router.post("/auth/verify", validateRequest({ body: authVerifySchema }), async (
     }
 
     // Generate session token
-    const token = generateSessionToken(merchant.id, clientAccount);
+    const token = generateSessionToken(merchant.id, merchant.email || clientAccount);
 
     // Audit: successful login
     await logLoginAttempt({

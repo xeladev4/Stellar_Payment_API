@@ -96,10 +96,19 @@ export async function login(
     throw new Error(body.error ?? "Login failed");
   }
 
-  const { token } = await res.json();
+  const body = await res.json();
+  console.log("[auth] login response body:", body);
+  const token = body.token;
+  if (!token) throw new Error("No token in server response");
   saveToken(token);
 
+  // Also save merchant metadata if provided
+  if (body.merchant && typeof window !== "undefined") {
+    localStorage.setItem("merchant_metadata", JSON.stringify(body.merchant));
+  }
+
   const session = getSession();
+  console.log("[auth] parsed session:", session);
   if (!session) throw new Error("Invalid token received from server");
   return session;
 }
