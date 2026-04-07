@@ -89,7 +89,7 @@ const router = express.Router();
  *                     status:         { type: string, enum: [pending, confirmed, completed, failed] }
  *                     tx_id:          { type: string, nullable: true }
  *                     created_at:     { type: string, format: date-time }
- *                     branding_config:{ type: object, nullable: true }
+ *                     branding_config: { type: object, nullable: true }
  *                 stellar_tx:
  *                   nullable: true
  *                   type: object

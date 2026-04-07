@@ -1187,118 +1187,50 @@ function createPaymentsRouter({
    */
   router.post("/anchor/sep24/withdraw", async (req, res, next) => {
     try {
-      const { asset_code, account, amount, anchor_domain } = req.body;
-      if (!data) {
-        return res.status(404).json({ error: "Payment not found" });
-      }
-
-      // No quote needed if customer is already paying with the right asset
-      const sameAsset =
-        sourceAsset.toUpperCase() === data.asset.toUpperCase() &&
-        (sourceAssetIssuer || null) === (data.asset_issuer || null);
-
-      if (sameAsset) {
+      const { asset_code, account } = req.body || {};
+      if (!asset_code || !account) {
         return res.status(400).json({
-          error:
-            "Source asset is the same as destination asset. Use a direct payment.",
+          error: "asset_code and account are required",
         });
       }
-
-      const SLIPPAGE = 0.01; // 1%
-
-      const quote = await findStrictReceivePaths({
-        sourceAccount,
-        destAssetCode: data.asset,
-        destAssetIssuer: data.asset_issuer,
-        destAmount: String(data.amount),
-        sourceAssetCode: sourceAsset,
-        sourceAssetIssuer,
-      });
-
-      if (!quote) {
-        return res.status(404).json({
-          error: "No path found for this asset pair",
-        });
-      }
-
-      const sendMax = (
-        parseFloat(quote.source_amount) *
-        (1 + SLIPPAGE)
-      ).toFixed(7);
-
-      res.json({
-        source_asset: quote.source_asset_code,
-        source_asset_issuer: quote.source_asset_issuer,
-        source_amount: quote.source_amount,
-        send_max: sendMax,
-        destination_asset: data.asset,
-        destination_asset_issuer: data.asset_issuer,
-        destination_amount: String(data.amount),
-        path: quote.path,
-        slippage: SLIPPAGE,
+      return res.status(501).json({
+        error: "SEP-24 withdrawal is not enabled on this deployment",
       });
     } catch (err) {
       next(err);
     }
-  }
-  );
+  });
 
   /**
    * @swagger
    * /api/anchor/sep24/transaction/{id}:
-   * get:
-   * summary: Poll the status of a SEP-0024 anchor transaction
-   * description: >
-   * Fetches the current status of a deposit or withdrawal transaction from
-   * the anchor. Call this repeatedly after the user closes the popup to check
-   * whether the transaction has completed.
-   * tags: [Anchor / SEP-0024]
-   * security:
-   * - ApiKeyAuth: []
-   * parameters:
-   * - in: path
-   * name: id
-   * required: true
-   * schema:
-   * type: string
-   * description: Anchor transaction ID returned from /deposit or /withdraw
-   * - in: query
-   * name: anchor_domain
-   * schema:
-   * type: string
-   * description: Anchor domain override (defaults to ANCHOR_DOMAIN env var)
-   * responses:
-   * 200:
-   * description: Transaction object from the anchor
-   * content:
-   * application/json:
-   * schema:
-   * type: object
-   * properties:
-   * transaction:
-   * type: object
-   * properties:
-   * id:
-   * type: string
-   * status:
-   * type: string
-   * description: >
-   * One of: incomplete, pending_user_transfer_start,
-   * pending_anchor, pending_stellar, completed, error
-   * amount_in:
-   * type: string
-   * amount_out:
-   * type: string
-   * stellar_transaction_id:
-   * type: string
-   * more_info_url:
-   * type: string
-   * 400:
-   * description: Missing transaction ID
-   * 500:
-   * description: ANCHOR_DOMAIN not configured
-   * 502:
-   * description: Anchor request failed
+   *   get:
+   *     summary: Poll the status of a SEP-0024 anchor transaction
+   *     description: >
+   *       Fetches the current status of a deposit or withdrawal transaction
+   *       from an anchor.
+   *     tags: [Anchor / SEP-0024]
+   *     security:
+   *       - ApiKeyAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Anchor transaction ID returned from /deposit or /withdraw
+   *     responses:
+   *       501:
+   *         description: Endpoint is not enabled on this deployment
+   */
+  router.get("/anchor/sep24/transaction/:id", async (req, res) => {
+    return res.status(501).json({
+      error: "SEP-24 transaction polling is not enabled on this deployment",
+    });
+  });
+
+  /**
+   * @swagger
    * /api/payments/{id}:
    *   delete:
    *     summary: Soft delete a payment (preserves audit logs)
