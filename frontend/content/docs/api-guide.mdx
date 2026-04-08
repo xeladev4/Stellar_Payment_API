@@ -10,10 +10,10 @@ This guide is for teams integrating PLUTO into an external business app using th
 
 Recommended local setup used in this guide:
 
-- Store frontend: `http://localhost:5173`
-- Store backend: `http://localhost:3001`
-- PLUTO frontend (checkout): `http://localhost:3000`
-- PLUTO backend (API): `http://localhost:4000`
+- Store frontend: `https://your-app.vercel.app`
+- Store backend: `https://your-api.up.railway.app`
+- PLUTO frontend (checkout): `https://stellar-payment-api.vercel.app`
+- PLUTO backend (API): `https://pluto-api.up.railway.app`
 
 ---
 
@@ -23,7 +23,7 @@ Store backend (`3001`) example:
 
 ```bash
 PORT=3001
-PLUTO_API_URL=http://localhost:4000
+PLUTO_API_URL=https://pluto-api.up.railway.app
 PLUTO_API_KEY=sk_your_merchant_api_key
 MERCHANT_STELLAR_RECIPIENT=GDTVZPCLO7YHRF3JQV6TQI6XW3DIIMFWWQWI25WWLOUZM5AOCZTE5RA3
 USDC_ISSUER=GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5
@@ -57,10 +57,9 @@ Save:
 ```js
 import "dotenv/config";
 import express from "express";
-import crypto from "node:crypto";
 
 const router = express.Router();
-const API_URL = process.env.PLUTO_API_URL || "http://localhost:4000";
+const API_URL = process.env.PLUTO_API_URL || "https://pluto-api.up.railway.app";
 
 router.post("/checkout", async (req, res) => {
   try {
@@ -77,7 +76,6 @@ router.post("/checkout", async (req, res) => {
       headers: {
         "Content-Type": "application/json",
         "x-api-key": process.env.PLUTO_API_KEY,
-        "Idempotency-Key": crypto.randomUUID(),
       },
       body: JSON.stringify(payload),
     });
@@ -99,7 +97,7 @@ Example response:
 ```json
 {
   "payment_id": "f95aa43c-46ad-42f4-88b9-4c9be8d7865e",
-  "payment_link": "http://localhost:3000/pay/f95aa43c-46ad-42f4-88b9-4c9be8d7865e",
+  "payment_link": "https://stellar-payment-api.vercel.app/pay/f95aa43c-46ad-42f4-88b9-4c9be8d7865e",
   "status": "pending"
 }
 ```
@@ -118,7 +116,7 @@ Use one or both:
 - Sending `x-api-key` from browser/frontend code.
 - Missing `asset_issuer` when sending `USDC`.
 - Pointing users to the wrong checkout domain.
-- Reusing a single idempotency key for different orders.
+- Sending incorrect asset codes or amounts.
 
 ---
 

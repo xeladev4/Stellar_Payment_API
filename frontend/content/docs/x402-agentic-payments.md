@@ -12,10 +12,10 @@ It assumes you already have a merchant account and API key.
 
 Recommended local setup used in this guide:
 
-- Store frontend: `http://localhost:5173`
-- Store backend: `http://localhost:3001`
-- PLUTO frontend (checkout): `http://localhost:3000`
-- PLUTO backend (API): `http://localhost:4000`
+- Store frontend: `https://your-app.vercel.app`
+- Store backend: `https://your-api.up.railway.app`
+- PLUTO frontend (checkout): `https://stellar-payment-api.vercel.app`
+- PLUTO backend (API): `https://pluto-api.up.railway.app`
 
 ---
 
@@ -25,7 +25,7 @@ Store backend (`3001`) example:
 
 ```bash
 PORT=3001
-PLUTO_API_URL=http://localhost:4000
+PLUTO_API_URL=https://pluto-api.up.railway.app
 PLUTO_API_KEY=sk_your_merchant_api_key
 
 MERCHANT_STELLAR_RECIPIENT=GDTVZPCLO7YHRF3JQV6TQI6XW3DIIMFWWQWI25WWLOUZM5AOCZTE5RA3
@@ -117,11 +117,10 @@ export async function payOnStellar({ amount, recipient, memo, assetIssuer }) {
 ```js
 import "dotenv/config";
 import express from "express";
-import crypto from "node:crypto";
 import { payOnStellar } from "../lib/payOnStellar.js";
 
 const router = express.Router();
-const API_URL = process.env.PLUTO_API_URL || "http://localhost:4000";
+const API_URL = process.env.PLUTO_API_URL || "https://pluto-api.up.railway.app";
 
 router.post("/checkout", async (req, res) => {
   try {
@@ -140,7 +139,6 @@ router.post("/checkout", async (req, res) => {
           "Content-Type": "application/json",
           "x-api-key": process.env.PLUTO_API_KEY,
           "x-pluto-pricing-mode": "x402",
-          "Idempotency-Key": crypto.randomUUID(),
           ...(token ? { "X-Payment-Token": token } : {}),
         },
         body: JSON.stringify(payload),

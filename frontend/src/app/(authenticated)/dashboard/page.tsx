@@ -123,6 +123,27 @@ export default function DashboardPage() {
           </section>
 
           <section className="rounded-2xl border border-[#E8E8E8] bg-white p-6">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-[#6B6B6B]">API Endpoint</h3>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 rounded-xl border border-[#E8E8E8] bg-[#F9F9F9] px-4 py-3">
+                <code className="flex-1 truncate font-mono text-xs text-[#0A0A0A]">https://pluto-api.up.railway.app/api</code>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText("https://pluto-api.up.railway.app/api")}
+                  className="rounded-lg border border-[#E8E8E8] bg-white p-1.5 text-[#6B6B6B] hover:text-[#0A0A0A] transition-colors"
+                  title="Copy API URL"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-[10px] text-[#6B6B6B]">Use this base URL for all subscription and x402 API requests.</p>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-[#E8E8E8] bg-white p-6">
             <h3 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-[#6B6B6B]">x402 Integration</h3>
             <p className="mb-4 text-xs text-[#6B6B6B]">
               Build pay-per-request flows with the production x402 setup guide.
