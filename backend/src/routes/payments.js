@@ -214,6 +214,7 @@ function createPaymentsRouter({
   async function createSession(req, res, next) {
     try {
       const body = req.body;
+      logger.info({ merchantId: req.merchant?.id, amount: body.amount, asset: body.asset }, "DEBUG: createSession started");
 
       // Per-asset payment limit validation (#153)
       const limits = req.merchant.payment_limits;
@@ -303,6 +304,7 @@ function createPaymentsRouter({
         paymentCreatedCounter.inc({ asset: body.asset });
       }
 
+      logger.info({ paymentId: paymentId }, "DEBUG: createSession success");
       res.status(201).json({
         payment_id: paymentId,
         payment_link: paymentLink,
@@ -311,6 +313,7 @@ function createPaymentsRouter({
         branding_config: resolvedBrandingConfig,
       });
     } catch (err) {
+      logger.error({ err, merchantId: req.merchant?.id }, "DEBUG: createSession error");
       if (err.status === 400 && err.details) {
         return res.status(400).json({ error: err.message, ...err.details });
       }

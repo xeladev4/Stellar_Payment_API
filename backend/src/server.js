@@ -102,6 +102,16 @@ async function startServer() {
 
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
+
+  process.on("uncaughtException", (err) => {
+    logger.fatal({ err }, "UNCAUGHT_EXCEPTION: process crashing");
+    // Allow logger to flush before exiting
+    setTimeout(() => process.exit(1), 1000);
+  });
+
+  process.on("unhandledRejection", (reason, promise) => {
+    logger.error({ reason, promise }, "UNHANDLED_REJECTION: a promise was rejected but not caught");
+  });
 }
 
 startServer();

@@ -1,5 +1,6 @@
 import pino from "pino";
 import pinoHttp from "pino-http";
+import crypto from "node:crypto";
 
 // Fields that must never appear in plain-text logs
 const REDACTED_PATHS = [
