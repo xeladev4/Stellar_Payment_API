@@ -11,14 +11,14 @@ export const docsManifest: DocEntry[] = [
     title: "Subscription API Guide",
     description:
       "Traditional merchant integration: register, use API keys, create payment links, and manage lifecycle/webhooks.",
-    filename: "api-guide.md",
+    filename: "api-guide.mdx",
   },
   {
     slug: "hmac-signatures",
     title: "How to verify HMAC signatures",
     description:
       "Validate Stellar webhook requests using the exact HMAC-SHA256 scheme implemented in the backend.",
-    filename: "hmac-signatures.md",
+    filename: "hmac-signatures.mdx",
   },
   {
     slug: "x402-agentic-payments",

@@ -3,6 +3,7 @@ import rateLimit from "express-rate-limit";
 import { randomBytes } from "crypto";
 import { supabase } from "../lib/supabase.js";
 import { requireApiKeyAuth, requireSessionAuth, hashPassword } from "../lib/auth.js";
+import { generateSessionToken } from "../lib/sep10-auth.js";
 import { getMerchantApiUsage } from "../lib/api-usage.js";
 import { z } from "zod";
 import { validateRequest } from "../lib/validation.js";
@@ -169,8 +170,11 @@ function createMerchantsRouter({
       throw insertError;
     }
 
+        const token = generateSessionToken(merchant.id, merchant.email);
+
         res.status(201).json({
           message: "Merchant registered successfully",
+          token,
           merchant: {
             id: merchant.id,
             email: merchant.email,
@@ -226,13 +230,6 @@ function createMerchantsRouter({
         throw error;
       }
 
-    // Check if merchant already exists
-    const { data: existing } = await supabase
-      .from("merchants")
-      .select("id")
-      .eq("email", email)
-      .is("deleted_at", null)
-      .maybeSingle();
       res.json({ api_key: newApiKey });
     } catch (err) {
       next(err);

@@ -33,8 +33,10 @@ Verify the signature against the **raw request body**, not a re-serialized objec
 
 If your framework parses JSON first and you rebuild it with a different key order or whitespace, the signature check can fail.
 
-## Node.js example
+## Framework Examples
 
+<FrameworkTabs>
+  <FrameworkTab label="Express (Node.js)">
 ```js
 import crypto from "node:crypto";
 import express from "express";
@@ -77,6 +79,84 @@ app.post(
   }
 );
 ```
+  </FrameworkTab>
+  <FrameworkTab label="Next.js (App Router)">
+```typescript
+import { NextResponse } from "next/server";
+import crypto from "node:crypto";
+
+export async function POST(req: Request) {
+  // 1. Grab the raw body parsing it as text
+  const rawBody = await req.text();
+  const incoming = req.headers.get("PLUTO-Signature") || "";
+  const secret = process.env.PLUTO_WEBHOOK_SECRET!;
+
+  // 2. Compute the expected signature
+  const expected = `sha256=${crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("hex")}`;
+
+  // 3. Securely compare
+  const valid =
+    incoming.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(incoming), Buffer.from(expected));
+
+  if (!valid) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  // 4. Parse the payload and process the event
+  const payload = JSON.parse(rawBody);
+  if (payload.event === "payment.confirmed") {
+    console.log("Confirmed:", payload.payment_id);
+  }
+
+  return new NextResponse(null, { status: 204 });
+}
+```
+  </FrameworkTab>
+  <FrameworkTab label="Python (Django)">
+```python
+import os
+import hmac
+import hashlib
+import json
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+@csrf_exempt
+@require_POST
+def pluto_webhook(request):
+    secret = os.getenv("PLUTO_WEBHOOK_SECRET", "")
+    incoming = request.headers.get("PLUTO-Signature", "")
+    
+    # 1. Grab raw body exactly as it was sent over the wire
+    raw_body = request.body
+
+    # 2. Compute the expected signature
+    expected_digest = hmac.new(
+        secret.encode("utf-8"),
+        raw_body,
+        hashlib.sha256
+    ).hexdigest()
+    
+    expected = f"sha256={expected_digest}"
+    
+    # 3. Secure compare preventing timing attacks
+    if not hmac.compare_digest(incoming, expected):
+        return JsonResponse({"error": "Invalid signature"}, status=401)
+        
+    # 4. Handle success
+    payload = json.loads(raw_body)
+    if payload.get("event") == "payment.confirmed":
+        print("Confirmed:", payload.get("payment_id"))
+        
+    return HttpResponse(status=204)
+```
+  </FrameworkTab>
+</FrameworkTabs>
 
 ## Example payload fields
 

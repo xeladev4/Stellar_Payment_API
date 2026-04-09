@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { registerMerchant, type Merchant } from "../lib/auth";
+import { registerMerchant, saveToken, type Merchant as AuthMerchant } from "../lib/auth";
 import { toast } from "sonner";
 import MaskedValue from "./MaskedValue";
 import zxcvbn from "zxcvbn";
 import {
   useSetMerchantApiKey,
   useSetMerchantMetadata,
+  useSetMerchantToken,
 } from "@/lib/merchant-store";
 import { Spinner } from "./ui/Spinner";
 
@@ -16,6 +17,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BUSINESS_NAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9\s&'.,-]{1,79}$/;
 
 export default function RegistrationForm() {
+  const setToken = useSetMerchantToken();
   const setApiKey = useSetMerchantApiKey();
   const setMerchant = useSetMerchantMetadata();
   const [email, setEmail] = useState("");
@@ -32,7 +34,7 @@ export default function RegistrationForm() {
     string | null
   >(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [registeredMerchant, setRegisteredMerchant] = useState<Merchant | null>(
+  const [registeredMerchant, setRegisteredMerchant] = useState<AuthMerchant | null>(
     null,
   );
 
@@ -108,6 +110,12 @@ export default function RegistrationForm() {
         notificationEmailTrimmed,
         password,
       );
+      
+      // Auto-login logic
+      if (data.token) {
+        setToken(data.token);
+      }
+
       setRegisteredMerchant(data.merchant);
       setApiKey(data.merchant.api_key);
       setMerchant(data.merchant);
@@ -156,7 +164,7 @@ export default function RegistrationForm() {
         </div>
 
         <Link
-          href="/"
+          href="/dashboard"
           className="text-center text-[10px] font-bold uppercase tracking-widest text-[#6B6B6B] transition-colors underline underline-offset-8 hover:text-[#0A0A0A]"
         >
           Enter Dashboard
