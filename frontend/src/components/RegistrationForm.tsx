@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { registerMerchant, saveToken, type Merchant as AuthMerchant } from "../lib/auth";
+import { registerMerchant, type Merchant as AuthMerchant } from "../lib/auth";
 import { toast } from "sonner";
 import MaskedValue from "./MaskedValue";
 import zxcvbn from "zxcvbn";
@@ -163,12 +162,12 @@ export default function RegistrationForm() {
           </div>
         </div>
 
-        <Link
+        <a
           href="/dashboard"
           className="text-center text-[10px] font-bold uppercase tracking-widest text-[#6B6B6B] transition-colors underline underline-offset-8 hover:text-[#0A0A0A]"
         >
           Enter Dashboard
-        </Link>
+        </a>
       </div>
     );
   }

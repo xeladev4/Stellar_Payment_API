@@ -1,84 +1,6 @@
 # PLUTO — Agentic Payment Infrastructure on Stellar
 
-> **Hackathon submission for: Agents on Stellar · x402 + Stripe MPP**
-
-PLUTO is a Stripe-like payment gateway built on Stellar that lets merchants accept XLM and USDC payments — now extended with **x402 pay-per-request** so AI agents can autonomously pay for API access using USDC micropayments.
-
----
-
-## What We Built
-
-### Core: Merchant Payment Gateway
-A full-stack payment infrastructure on Stellar testnet:
-- Merchants register and get an API key
-- Create payment links (`POST /api/create-payment`)
-- Customers pay via a branded checkout page (`/pay/:id`)
-- Payments confirmed automatically via Horizon polling
-- Webhooks fire on confirmation
-- Real-time dashboard with analytics
-
-### New: x402 Agentic Payments
-The x402 protocol turns any HTTP endpoint into a pay-per-request service. AI agents can autonomously pay for API access without subscriptions or API keys — just USDC on Stellar.
-
-**Flow:**
-```
-Agent → GET /api/demo/protected
-      ← 402 { amount: "0.10", asset: "USDC", recipient: "G...", memo: "x402-abc123" }
-Agent → sends 0.10 USDC on Stellar with memo
-Agent → POST /api/verify-x402 { tx_hash, amount, recipient, memo }
-      ← { access_token: "eyJ..." }
-Agent → GET /api/demo/protected + X-Payment-Token: eyJ...
-      ← 200 { secret_data: "you paid for this" }
-```
-
----
-
-## Live Demo
-
-- **Frontend (Production)**: [https://stellar-payment-api.vercel.app](https://stellar-payment-api.vercel.app)
-- **Backend (Production)**: [https://pluto-api.up.railway.app/](https://pluto-api.up.railway.app/)
-  - Health check: [/health](https://pluto-api.up.railway.app/health)
-  - Documentation: [/api-docs](https://pluto-api.up.railway.app/api-docs)
-
-### Run the agent demo (targeting production)
-Edit `backend/scripts/demoAgent.js` to use the production URL, or export the environment variable:
-```bash
-export PLUTO_API_URL=https://pluto-api.up.railway.app
-cd backend
-node scripts/demoAgent.js
-```
-
-Watch an AI agent go through the full payment loop — 402 → pay → verify → 200 — entirely automatically on Stellar testnet.
-
-### Frontend demo
-Visit [https://stellar-payment-api.vercel.app/x402-demo](https://stellar-payment-api.vercel.app/x402-demo) to see the agent payment flow visualized in real-time.
-
-
----
-
-## Tech Stack
-
-| Layer | Tech |
-|-------|------|
-| Backend | Node.js + Express |
-| Database | Supabase (Postgres) |
-| Blockchain | Stellar SDK + Horizon API (testnet) |
-| Frontend | Next.js 14 + Tailwind CSS |
-| Real-time | Socket.io + SSE |
-| Rate limiting | Redis |
-| Agentic payments | x402 protocol (custom implementation) |
-
----
-
-## x402 Implementation
-
-### New endpoints
-- `POST /api/verify-x402` — verifies a Stellar USDC payment and issues a short-lived JWT
-- `GET /api/demo/protected` — example paywalled endpoint (0.10 USDC per request)
-- `GET /api/demo/free` — free endpoint for comparison
-
-### Middleware
-`backend/src/middleware/x402.js` — drop-in Express middleware that protects any route:
+URLin the 
 
 ```js
 import { x402Middleware } from './middleware/x402.js';
@@ -177,9 +99,21 @@ REDIS_URL=redis://localhost:6379
 
 ---
 
-## Hackathon Notes
+## Hackathon Notes & Judging Criteria
 
-- All Stellar interactions use real testnet transactions (not mocked)
-- The x402 implementation is custom-built on top of the existing PLUTO infrastructure
-- The demo agent is fully autonomous — no human interaction required after `node scripts/demoAgent.js`
-- Open source: full source code in this repository
+### Real Stellar Testnet Interaction
+- All Stellar interactions use **actual testnet transactions** (we do not mock blockchain actions).
+- Payment creation stores dedicated Stellar recipient addresses per merchant.
+- Our Horizon polling engine confirms on-chain USDC/XLM payments in real-time.
+- The x402 agent script submits actual USDC micropayments on the testnet.
+- All transactions are entirely verifiable on [Stellar Expert (testnet)](https://stellar.expert/explorer/testnet).
+
+### Unfinished Features & Mock Data (Requirement 1 Disclosure)
+While the core payment processing and x402 logic is 100% functional, the following areas contain placeholders or are unfinished due to hackathon time constraints:
+1. **Analytics Dashboard:** The merchant volume chart on the frontend dashboard currently displays synthesized local data curves for visual demonstration; the real-time aggregation pipeline from Supabase is not fully implemented.
+2. **Settings Persistence:** Some deep settings (like custom coloring options for the checkout UI) store temporarily in state but aren't fully wired to apply dynamic CSS globally.
+3. **Machine Payment Protocol (MPP):** Our planned Stripe-like payment channels for high-frequency agent actions (to avoid per-txn standard fees) was architected but not finished in this version.
+4. **Ethereum Support:** Our backend architecture allows for ERC-20 payment routing, but we have exclusively rolled out Stellar indexing for this MVP.
+
+- **Open Source**: The full source code is public in this repository.
+- **The dual video focus**: PLUTO bridges the visual e-commerce gap (1-page Freighter checkouts) seamlessly alongside headless Machine economies (x402 agent payments). Both run off the exact same resilient backend.
