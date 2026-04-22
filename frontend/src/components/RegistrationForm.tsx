@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { registerMerchant, type Merchant as AuthMerchant } from "../lib/auth";
 import { toast } from "sonner";
 import MaskedValue from "./MaskedValue";
@@ -16,43 +16,39 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BUSINESS_NAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9\s&'.,-]{1,79}$/;
 
 // Memoized password strength indicator to prevent unnecessary re-renders
-const PasswordStrengthIndicator = ({
-  score,
-  passwordLength,
-}: {
-  score: number;
-  passwordLength: number;
-}) => (
-  <div className="mt-1 flex flex-col gap-2">
-    <div className="flex h-1 gap-1">
-      {[0, 1, 2, 3].map((index) => {
-        const activeBars = score === 0 ? 1 : score === 4 ? 4 : score + 1;
-        const isActive = passwordLength > 0 && index < activeBars;
-        let bgColor = "bg-[#E8E8E8]";
+const PasswordStrengthIndicator = React.memo(
+  ({ score, passwordLength }: { score: number; passwordLength: number }) => (
+    <div className="mt-1 flex flex-col gap-2">
+      <div className="flex h-1 gap-1">
+        {[0, 1, 2, 3].map((index) => {
+          const activeBars = score === 0 ? 1 : score === 4 ? 4 : score + 1;
+          const isActive = passwordLength > 0 && index < activeBars;
+          let bgColor = "bg-[#E8E8E8]";
 
-        if (isActive) {
-          if (score <= 1) bgColor = "bg-red-400";
-          else if (score === 2) bgColor = "bg-yellow-400";
-          else bgColor = "bg-[#0A0A0A]";
-        }
+          if (isActive) {
+            if (score <= 1) bgColor = "bg-red-400";
+            else if (score === 2) bgColor = "bg-yellow-400";
+            else bgColor = "bg-[#0A0A0A]";
+          }
 
-        return (
-          <div
-            key={index}
-            className={`flex-1 rounded-full transition-colors duration-300 ${bgColor}`}
-          />
-        );
-      })}
+          return (
+            <div
+              key={index}
+              className={`flex-1 rounded-full transition-colors duration-300 ${bgColor}`}
+            />
+          );
+        })}
+      </div>
+      {passwordLength > 0 && (
+        <p className="text-[9px] text-[#6B6B6B] text-right font-black uppercase tracking-widest">
+          {["Weak", "Fair", "Good", "Strong", "Strong"][score]}
+        </p>
+      )}
     </div>
-    {passwordLength > 0 && (
-      <p className="text-[9px] text-[#6B6B6B] text-right font-black uppercase tracking-widest">
-        {["Weak", "Fair", "Good", "Strong", "Strong"][score]}
-      </p>
-    )}
-  </div>
+  ),
 );
 
-export default function RegistrationForm() {
+export default React.memo(function RegistrationForm() {
   const setToken = useSetMerchantToken();
   const setApiKey = useSetMerchantApiKey();
   const setMerchant = useSetMerchantMetadata();
@@ -401,4 +397,4 @@ export default function RegistrationForm() {
       </button>
     </form>
   );
-}
+});
