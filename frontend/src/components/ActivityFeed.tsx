@@ -21,8 +21,6 @@ interface Payment {
   created_at: string;
 }
 
-const SKELETON_ITEMS = [0, 1, 2];
-
 interface PaymentRowProps {
   payment: Payment;
   index: number;
@@ -185,8 +183,6 @@ export default function ActivityFeed() {
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse">
-        {SKELETON_ITEMS.map((i) => (
-          <div key={i} className="h-16 w-full rounded-lg bg-[#F5F5F5]" />
         {[...Array(3)].map((_, i) => (
           <div key={i} className="h-14 w-full rounded-lg bg-[#F5F5F5] sm:h-16" />
         ))}
