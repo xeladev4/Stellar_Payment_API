@@ -41,6 +41,51 @@ const SUBTITLES: Record<string, string> = {
   walletconnect: "Mobile & desktop wallets",
 };
 
+function getFriendlyErrorMessage(id: string, err: unknown, t: (key: string) => string) {
+  const message = err instanceof Error ? err.message : String(err ?? "");
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes("4001") ||
+    normalized.includes("reject") ||
+    normalized.includes("declin") ||
+    normalized.includes("denied") ||
+    normalized.includes("canceled") ||
+    normalized.includes("cancelled")
+  ) {
+    return t("userRejected");
+  }
+
+  if (
+    normalized.includes("project_id") ||
+    normalized.includes("project id") ||
+    normalized.includes("walletconnect is disabled") ||
+    normalized.includes("pairing uri")
+  ) {
+    return t("walletConnectUnavailable");
+  }
+
+  if (
+    normalized.includes("not installed") ||
+    normalized.includes("not found") ||
+    normalized.includes("extension")
+  ) {
+    return t("extensionNotFound");
+  }
+
+  if (
+    normalized.includes("no stellar accounts") ||
+    normalized.includes("public key") ||
+    normalized.includes("session not established")
+  ) {
+    return t("noAccountFound");
+  }
+
+  return id === "walletconnect"
+    ? t("walletConnectFailed")
+    : t("connectionFailed");
+}
+
 export default function WalletSelector({ networkPassphrase, onConnected }: WalletSelectorProps) {
   const t = useTranslations("walletSelector");
   const { providers, activeProvider, selectProvider } = useWallet();
@@ -64,51 +109,6 @@ export default function WalletSelector({ networkPassphrase, onConnected }: Walle
     });
     return () => { cancelled = true; };
   }, [providers]);
-
-  function getFriendlyErrorMessage(id: string, err: unknown) {
-    const message = err instanceof Error ? err.message : String(err ?? "");
-    const normalized = message.toLowerCase();
-
-    if (
-      normalized.includes("4001") ||
-      normalized.includes("reject") ||
-      normalized.includes("declin") ||
-      normalized.includes("denied") ||
-      normalized.includes("canceled") ||
-      normalized.includes("cancelled")
-    ) {
-      return t("userRejected");
-    }
-
-    if (
-      normalized.includes("project_id") ||
-      normalized.includes("project id") ||
-      normalized.includes("walletconnect is disabled") ||
-      normalized.includes("pairing uri")
-    ) {
-      return t("walletConnectUnavailable");
-    }
-
-    if (
-      normalized.includes("not installed") ||
-      normalized.includes("not found") ||
-      normalized.includes("extension")
-    ) {
-      return t("extensionNotFound");
-    }
-
-    if (
-      normalized.includes("no stellar accounts") ||
-      normalized.includes("public key") ||
-      normalized.includes("session not established")
-    ) {
-      return t("noAccountFound");
-    }
-
-    return id === "walletconnect"
-      ? t("walletConnectFailed")
-      : t("connectionFailed");
-  }
 
   const handleSelect = useCallback(async (id: string) => {
     setConnectError(null);
@@ -141,7 +141,7 @@ export default function WalletSelector({ networkPassphrase, onConnected }: Walle
       selectProvider(id);
       onConnected();
     } catch (err) {
-      const msg = getFriendlyErrorMessage(id, err);
+      const msg = getFriendlyErrorMessage(id, err, t);
       if (id === "walletconnect") {
         setWcError(msg);
         setWcUri(null);
@@ -219,7 +219,6 @@ export default function WalletSelector({ networkPassphrase, onConnected }: Walle
 
       <div className="flex flex-col gap-3">
         {providerButtons}
-      </div>
       </div>
 
       {/* WalletConnect QR */}

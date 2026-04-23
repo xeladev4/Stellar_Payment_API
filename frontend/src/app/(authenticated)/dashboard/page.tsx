@@ -16,6 +16,7 @@ import FirstApiKeyModal from "@/components/FirstApiKeyModal";
 import PaymentMetrics from "@/components/PaymentMetrics";
 import RecentPayments from "@/components/RecentPayments";
 import WithdrawModal from "@/components/WithdrawModal";
+import FirstPaymentCelebration from "@/components/FirstPaymentCelebration";
 
 export default function DashboardPage() {
   const t = useTranslations("dashboardPage");
